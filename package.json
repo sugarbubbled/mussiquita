@@ -1,0 +1,13 @@
+{
+  "name": "musiquita",
+  "version": "1.0.0",
+  "description": "Reproductor de musica estilo Spotify",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "youtube-dl-exec": "^2.4.12"
+  }
+}

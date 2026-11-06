@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Musiquita - Reproductor</title>
+    <style>
+        body {
+            background-color: #121212;
+            color: #ffffff;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .player-card {
+            background-color: #181818;
+            padding: 30px;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+            width: 90%;
+            max-width: 400px;
+        }
+        h1 { color: #1db954; margin-bottom: 10px; }
+        p { color: #b3b3b3; font-size: 14px; }
+        .status { margin-top: 20px; padding: 10px; background: #282828; border-radius: 6px; font-size: 13px; }
+    </style>
+</head>
+<body>
+    <div class="player-card">
+        <h1>Musiquita 🎵</h1>
+        <p>Tu reproductor web independiente</p>
+        <div class="status" id="estado">Conectando con el servidor...</div>
+    </div>
+
+    <script>
+        // Comprobación rápida de que el servidor responde
+        fetch('/api/test')
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById('estado').innerText = "Estado: " + data.mensaje;
+                document.getElementById('estado').style.color = "#1db954";
+            })
+            .catch(() => {
+                document.getElementById('estado').innerText = "Error al conectar con el servidor backend";
+                document.getElementById('estado').style.color = "#ff4444";
+            });
+    </script>
+</body>
+</html>
