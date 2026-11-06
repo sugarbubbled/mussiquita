@@ -1,5 +1,6 @@
 const express = require('express');
 const path = require('path');
+const https = require('https');
 const app = express();
 
 const PORT = process.env.PORT || 3000;
@@ -7,59 +8,74 @@ const PORT = process.env.PORT || 3000;
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
 
-// Ruta optimizada utilizando la API pública de Cobalt para extraer el MP3 directo
-app.post('/api/download', async (req, res) => {
+// Ruta optimizada usando el módulo nativo HTTPS de Node.js
+app.post('/api/download', (req, res) => {
     const { url } = req.body;
     if (!url) return res.status(400).json({ error: 'Falta la URL de YouTube' });
 
-    try {
-        console.log('Conectando con Cobalt API para extraer audio de:', url);
-        
-        const cobaltResponse = await fetch('https://api.cobalt.tools/api/json', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
-                'User-Agent': 'Mozilla/5.0'
-            },
-            body: JSON.stringify({
-                url: url,
-                isAudioOnly: true,
-                audioFormat: 'mp3'
-            })
+    const postData = JSON.stringify({
+        url: url,
+        isAudioOnly: true,
+        audioFormat: 'mp3'
+    });
+
+    const options = {
+        hostname: 'api.cobalt.tools',
+        port: 443,
+        path: '/api/json',
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'User-Agent': 'Mozilla/5.0',
+            'Content-Length': Buffer.byteLength(postData)
+        }
+    };
+
+    const apiReq = https.request(options, (apiRes) => {
+        let data = '';
+
+        apiRes.on('data', (chunk) => {
+            data += chunk;
         });
 
-        const data = await cobaltResponse.json();
-        console.log('Respuesta obtenida:', data);
+        apiRes.on('end', () => {
+            try {
+                const json = JSON.parse(data);
+                console.log('Respuesta de Cobalt:', json);
 
-        if (!data || (!data.url && !data.picker)) {
-            return res.status(500).json({ error: 'El servicio externo no pudo procesar este enlace.' });
-        }
+                const directAudioUrl = json.url || (json.picker && json.picker[0] ? json.picker[0].url : null);
+                
+                if (!directAudioUrl) {
+                    return res.status(500).json({ error: 'El servicio externo no pudo generar el audio.' });
+                }
 
-        // Obtenemos el enlace de descarga directa del MP3
-        const directAudioUrl = data.url || (data.picker && data.picker[0] ? data.picker[0].url : null);
-        let title = "Audio de YouTube";
-        
-        if (data.filename) {
-            title = data.filename.replace(/\.[^/.]+$/, ""); // Limpia la extensión del nombre
-        }
+                let title = "Audio de YouTube";
+                if (json.filename) {
+                    title = json.filename.replace(/\.[^/.]+$/, "");
+                }
 
-        if (!directAudioUrl) {
-            return res.status(500).json({ error: 'No se generó un enlace de audio válido.' });
-        }
+                res.json({
+                    success: true,
+                    title: title,
+                    artist: 'YouTube Music',
+                    fileUrl: directAudioUrl
+                });
 
-        // Devolvemos la URL directa lista para reproducir en el iPhone
-        res.json({
-            success: true,
-            title: title,
-            artist: 'YouTube Music',
-            fileUrl: directAudioUrl
+            } catch (e) {
+                console.error('Error al parsear JSON:', data);
+                res.status(500).json({ error: 'Error procesando la respuesta del servidor externo.' });
+            }
         });
+    });
 
-    } catch (error) {
-        console.error('Error detallado:', error);
-        res.status(500).json({ error: 'Error de conexión al procesar el audio.' });
-    }
+    apiReq.on('error', (e) => {
+        console.error('Error en la petición HTTPS:', e);
+        res.status(500).json({ error: 'Fallo de red al conectar con la API de conversión.' });
+    });
+
+    apiReq.write(postData);
+    apiReq.end();
 });
 
 app.listen(PORT, '0.0.0.0', () => {
