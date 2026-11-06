@@ -5,175 +5,185 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>Offline Music & Files</title>
+    <title>Offline Music Browser</title>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; -webkit-tap-highlight-color: transparent; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", Roboto, sans-serif; -webkit-tap-highlight-color: transparent; }
         body { background-color: #000; color: #fff; display: flex; flex-direction: column; height: 100vh; height: 100dvh; overflow: hidden; padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom); }
         
         .app-container { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
+        .mobile-header { padding: 14px 16px; font-size: 1.2rem; font-weight: 700; background: #000; border-bottom: 1px solid #1a1a1a; display: flex; justify-content: space-between; align-items: center; }
         
-        .mobile-header { padding: 16px; font-size: 1.4rem; font-weight: 700; color: #fff; display: flex; align-items: center; justify-content: space-between; background-color: #000; border-bottom: 1px solid #1a1a1a; }
-        
-        .main-content { flex: 1; background: linear-gradient(to bottom, #1e1e1e, #121212); padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; }
-        
-        /* Tarjeta de Importación Local */
-        .import-card { background-color: #181818; padding: 16px; border-radius: 12px; display: flex; flex-direction: column; gap: 10px; border: 1px dashed #333; text-align: center; }
-        .import-card h2 { font-size: 1rem; color: #fff; }
-        .import-card p { font-size: 0.8rem; color: #b3b3b3; }
-        
-        .btn-action { background-color: #1db954; color: #000; font-weight: 700; border: none; border-radius: 24px; padding: 12px 20px; font-size: 0.9rem; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: 100%; }
-        .btn-action:active { transform: scale(0.98); }
-        
-        /* Sección de Secciones / Vistas */
-        .section-title { font-size: 1.1rem; font-weight: 600; margin-top: 5px; display: flex; justify-content: space-between; align-items: center; }
-        
-        /* Lista de Archivos */
-        .track-list { display: flex; flex-direction: column; gap: 8px; }
-        .track-item { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; border-radius: 8px; background-color: rgba(255, 255, 255, 0.04); transition: background 0.2s; }
-        .track-item:active { background-color: rgba(255, 255, 255, 0.08); }
-        
-        .track-info { display: flex; align-items: center; gap: 12px; overflow: hidden; flex: 1; cursor: pointer; }
-        .track-cover { width: 44px; height: 44px; background-color: #282828; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0; }
-        
-        .btn-play-small { background: none; border: none; color: #1db954; font-size: 1.3rem; cursor: pointer; padding: 4px 8px; }
-        .btn-delete { background: none; border: none; color: #888; font-size: 1rem; cursor: pointer; padding: 4px; }
-        .btn-delete:hover { color: #ff4d4d; }
+        /* Vistas principales */
+        .view { display: none; flex: 1; flex-direction: column; overflow-y: auto; background: linear-gradient(to bottom, #1e1e1e, #121212); padding: 16px; gap: 14px; }
+        .view.active { display: flex; }
 
-        /* Reproductor Fijo Inferior */
+        /* Estilos del Navegador Web */
+        .browser-bar { display: flex; gap: 8px; margin-bottom: 10px; }
+        .browser-bar input { flex: 1; background: #2a2a2a; border: 1px solid #333; border-radius: 8px; padding: 10px 14px; color: #fff; font-size: 0.9rem; outline: none; }
+        .browser-frame { flex: 1; border: 1px solid #222; border-radius: 8px; background: #fff; width: 100%; min-height: 350px; }
+
+        /* Botón de Captura */
+        .btn-green { background-color: #1db954; color: #000; font-weight: 700; border: none; border-radius: 20px; padding: 10px 18px; font-size: 0.85rem; cursor: pointer; }
+        .btn-green:active { transform: scale(0.98); }
+
+        /* Lista de Pistas */
+        .track-item { display: flex; align-items: center; justify-content: space-between; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.04); margin-bottom: 8px; }
+        .track-info { display: flex; align-items: center; gap: 12px; overflow: hidden; flex: 1; }
+        .track-cover { width: 44px; height: 44px; background: #282828; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0; }
+
+        /* Reproductor Inferior */
         .player-bar { background-color: #181818; margin: 0 8px 8px 8px; border-radius: 12px; padding: 10px 14px; display: flex; flex-direction: column; gap: 6px; box-shadow: 0 -4px 20px rgba(0,0,0,0.6); }
-        .player-top { display: flex; align-items: center; justify-content: space-between; }
-        .player-left { display: flex; align-items: center; gap: 10px; overflow: hidden; flex: 1; }
-        
-        audio { width: 100%; height: 36px; border-radius: 4px; }
+        audio { width: 100%; height: 36px; }
 
-        /* Navegación Inferior Estilo App */
+        /* Navegación Inferior */
         .bottom-nav { height: 60px; background-color: #000; border-top: 1px solid #222; display: flex; justify-content: space-around; align-items: center; }
-        .nav-item { color: #b3b3b3; font-size: 0.7rem; display: flex; flex-direction: column; align-items: center; gap: 4px; text-decoration: none; }
-        .nav-item.active { color: #fff; }
+        .nav-item { color: #b3b3b3; font-size: 0.75rem; display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer; }
+        .nav-item.active { color: #1db954; }
     </style>
 </head>
 <body>
 
     <div class="app-container">
-        <!-- Cabecera -->
         <div class="mobile-header">
-            <span>📁 Offline Vault</span>
-            <span style="font-size: 0.8rem; color: #1db954;" id="file-count">0 archivos</span>
+            <span>🎵 Offline Browser</span>
+            <span style="font-size: 0.8rem; color: #1db954;" id="storage-status">0 Canciones</span>
         </div>
 
-        <!-- Contenido Principal -->
-        <div class="main-content">
-            <!-- Botón para importar desde la app Archivos de iOS / Fotos -->
-            <div class="import-card">
-                <h2>Añadir Música o Videos Offline</h2>
-                <p>Importa archivos de audio (MP3, M4A, WAV) o video directamente desde tu iPhone.</p>
-                <button class="btn-action" onclick="document.getElementById('file-picker').click()">
-                    <span>➕</span> Seleccionar desde Archivos / iCloud
-                </button>
-                <input type="file" id="file-picker" accept="audio/*,video/*" multiple style="display: none;" onchange="importarArchivos(event)">
+        <!-- Vista 1: Navegador para encontrar y descargar música -->
+        <div class="view active" id="view-browser">
+            <div class="browser-bar">
+                <input type="text" id="web-url" placeholder="Pega enlace de audio o URL web..." value="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3">
+                <button class="btn-green" onclick="cargarWeb()">Ir</button>
             </div>
+            <button class="btn-green" style="width: 100%; margin-bottom: 10px;" onclick="guardarEnBiblioteca()">📥 Guardar Audio Actual en la App</button>
+            <iframe id="browser-iframe" class="browser-frame" src="about:blank"></iframe>
+        </div>
 
-            <!-- Listado -->
-            <div class="section-title">
-                <span>Tus Archivos Locales</span>
-            </div>
-            
-            <div class="track-list" id="track-list">
-                <!-- Se llenará de forma dinámica -->
-                <div style="text-align: center; color: #77; padding: 30px; font-size: 0.9rem;">
-                    No hay archivos todavía. Pulsa el botón superior para añadir música o videos.
-                </div>
+        <!-- Vista 2: Biblioteca Offline -->
+        <div class="view" id="view-library">
+            <h3 style="font-size: 1.1rem;">Tu Música Guardada (Offline)</h3>
+            <div id="library-list">
+                <!-- Se puebla desde IndexedDB -->
             </div>
         </div>
 
-        <!-- Reproductor Inferior -->
+        <!-- Reproductor -->
         <div class="player-bar">
-            <div class="player-top">
-                <div class="player-left">
-                    <div class="track-cover" id="current-cover" style="width: 36px; height: 36px;">🎵</div>
-                    <div style="overflow: hidden;">
-                        <div id="player-title" style="font-weight: 600; font-size: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Ningún archivo seleccionado</div>
-                        <div id="player-type" style="color: #b3b3b3; font-size: 0.7rem;">Modo local offline</div>
-                    </div>
-                </div>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div style="font-weight: 600; font-size: 0.85rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" id="player-title">Selecciona una pista</div>
             </div>
             <audio id="audio-player" controls></audio>
         </div>
 
-        <!-- Navegación -->
+        <!-- Barra Inferior -->
         <div class="bottom-nav">
-            <a class="nav-item active"><span>📁</span>Archivos</a>
-            <a class="nav-item"><span>🎵</span>Música</a>
-            <a class="nav-item"><span>🎬</span>Videos</a>
-            <a class="nav-item"><span>⭐</span>Favoritos</a>
+            <div class="nav-item active" onclick="cambiarVista('browser', this)"><span>🌐</span>Navegador</div>
+            <div class="nav-item" onclick="cambiarVista('library', this)"><span>📚</span>Biblioteca</div>
         </div>
     </div>
 
     <script>
-        let biblioteca = [];
+        // Inicialización de la base de datos IndexedDB local en el iPhone
+        let db;
+        const request = indexedDB.open("OfflineMusicDB", 1);
+        
+        request.onupgradeneeded = (e) => {
+            db = e.target.result;
+            db.createObjectStore("songs", { keyPath: "id", autoIncrement: true });
+        };
+        
+        request.onsuccess = (e) => {
+            db = e.target.result;
+            cargarBiblioteca();
+        };
 
-        function importarArchivos(event) {
-            const files = event.target.files;
-            if (!files.length) return;
+        function cambiarVista(vista, el) {
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            document.getElementById(`view-${vista}`).classList.add('active');
+            el.classList.add('active');
+        }
 
-            for (let i = 0; i < files.length; i++) {
-                const file = files[i];
-                const fileUrl = URL.createObjectURL(file);
+        function cargarWeb() {
+            const url = document.getElementById('web-url').value;
+            const iframe = document.getElementById('browser-iframe');
+            iframe.src = url;
+        }
+
+        async function guardarEnBiblioteca() {
+            const url = document.getElementById('web-url').value;
+            if(!url) return alert('Introduce un enlace de audio válido.');
+
+            try {
+                // Descargamos el buffer de audio para almacenarlo físicamente en el dispositivo
+                const response = await fetch(url);
+                const blob = await response.blob();
                 
-                biblioteca.push({
-                    name: file.name,
-                    size: (file.size / (1024*1024)).toFixed(1) + ' MB',
-                    url: fileUrl,
-                    type: file.type.includes('video') ? '🎬' : '🎵'
-                });
-            }
+                const song = {
+                    title: `Pista Guardada ${new Date().toLocaleTimeString()}`,
+                    data: blob,
+                    date: new Date().toLocaleDateString()
+                };
 
-            actualizarVista();
-            alert(`¡Se han añadido ${files.length} archivo(s) con éxito a tu bóveda local!`);
+                const tx = db.transaction("songs", "readwrite");
+                tx.objectStore("songs").add(song);
+                tx.oncomplete = () => {
+                    alert('¡Canción guardada permanentemente para escuchar Offline!');
+                    cargarBiblioteca();
+                };
+            } catch(e) {
+                alert('No se pudo guardar el archivo. Asegúrate de que el enlace apunta directamente al recurso multimedia.');
+            }
         }
 
-        function actualizarVista() {
-            const trackList = document.getElementById('track-list');
-            document.getElementById('file-count').innerText = `${biblioteca.length} archivos`;
+        function cargarBiblioteca() {
+            if(!db) return;
+            const tx = db.transaction("songs", "readonly");
+            const store = tx.objectStore("songs");
+            const request = store.getAll();
 
-            if (biblioteca.length === 0) {
-                trackList.innerHTML = `<div style="text-align: center; color: #777; padding: 30px; font-size: 0.9rem;">No hay archivos todavía. Pulsa el botón superior para añadir música o videos.</div>`;
-                return;
-            }
+            request.onsuccess = () => {
+                const songs = request.result;
+                document.getElementById('storage-status').innerText = `${songs.length} Canciones`;
+                const list = document.getElementById('library-list');
+                list.innerHTML = '';
 
-            trackList.innerHTML = '';
-            biblioteca.forEach((item, index) => {
-                const div = document.createElement('div');
-                div.className = 'track-item';
-                div.innerHTML = `
-                    <div class="track-info" onclick="reproducir(${index})">
-                        <div class="track-cover">${item.type}</div>
-                        <div style="overflow: hidden;">
-                            <div style="font-weight: 600; font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${item.name}</div>
-                            <div style="color: #b3b3b3; font-size: 0.75rem;">${item.size} • Offline</div>
+                if(songs.length === 0) {
+                    list.innerHTML = '<div style="color:#888; text-align:center; padding:20px;">No hay canciones guardadas aún.</div>';
+                    return;
+                }
+
+                songs.forEach(song => {
+                    const div = document.createElement('div');
+                    div.className = 'track-item';
+                    div.innerHTML = `
+                        <div class="track-info">
+                            <div class="track-cover">🎵</div>
+                            <div>
+                                <div style="font-weight:600; font-size:0.9rem;">${song.title}</div>
+                                <div style="color:#888; font-size:0.75rem;">Guardado el ${song.date}</div>
+                            </div>
                         </div>
-                    </div>
-                    <button class="btn-play-small" onclick="reproducir(${index})">▶</button>
-                    <button class="btn-delete" onclick="eliminarArchivo(${index})" title="Eliminar">✕</button>
-                `;
-                trackList.appendChild(div);
-            });
+                        <button class="btn-green" onclick="reproducirBlob(${song.id})">▶</button>
+                    `;
+                    list.appendChild(div);
+                });
+            };
         }
 
-        function reproducir(index) {
-            const item = biblioteca[index];
-            document.getElementById('player-title').innerText = item.name;
-            document.getElementById('player-type').innerText = item.type === '🎬' ? 'Video reproduciéndose' : 'Audio reproduciéndose';
-            document.getElementById('current-cover').innerText = item.type;
+        function reproducirBlob(id) {
+            const tx = db.transaction("songs", "readonly");
+            const store = tx.objectStore("songs");
+            const request = store.get(id);
 
-            const player = document.getElementById('audio-player');
-            player.src = item.url;
-            player.play();
-        }
-
-        function eliminarArchivo(index) {
-            biblioteca.splice(index, 1);
-            actualizarVista();
+            request.onsuccess = () => {
+                const song = request.result;
+                const audioUrl = URL.createObjectURL(song.data);
+                document.getElementById('player-title').innerText = song.title;
+                const player = document.getElementById('audio-player');
+                player.src = audioUrl;
+                player.play();
+            };
         }
     </script>
 </body>
