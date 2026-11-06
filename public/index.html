@@ -3,52 +3,308 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Musiquita - Reproductor</title>
+    <title>Musiquita - Web Player</title>
     <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
         body {
-            background-color: #121212;
-            color: #ffffff;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: #000;
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Layout Principal */
+        .app-container {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        /* Sidebar Sidebar */
+        .sidebar {
+            width: 240px;
+            background-color: #000;
+            padding: 24px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .logo {
+            font-size: 1.4rem;
+            font-weight: bold;
+            color: #1db954;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .nav-items {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .nav-link {
+            color: #b3b3b3;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: color 0.2s;
+            cursor: pointer;
+        }
+
+        .nav-link:hover, .nav-link.active {
+            color: #fff;
+        }
+
+        .playlists-section {
+            margin-top: 10px;
+            border-top: 1px solid #282828;
+            padding-top: 16px;
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .playlists-title {
+            color: #b3b3b3;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+        }
+
+        /* Área de Contenido Principal */
+        .main-content {
+            flex: 1;
+            background: linear-gradient(to bottom, #1e1e1e, #121212);
+            border-radius: 8px;
+            margin: 8px 8px 8px 0;
+            padding: 24px;
+            overflow-y: auto;
+        }
+
+        .section-header {
+            font-size: 1.8rem;
+            margin-bottom: 20px;
+        }
+
+        /* Tarjeta de Descarga / YouTube */
+        .youtube-card {
+            background-color: #181818;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            background-color: #242424;
+            border: 1px solid transparent;
+            border-radius: 4px;
+            padding: 12px 16px;
+            color: #fff;
+            font-size: 0.9rem;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #1db954;
+        }
+
+        .btn-green {
+            background-color: #1db954;
+            color: #000;
+            font-weight: bold;
+            border: none;
+            border-radius: 20px;
+            padding: 12px 24px;
+            cursor: pointer;
+            transition: transform 0.2s, background-color 0.2s;
+        }
+
+        .btn-green:hover {
+            background-color: #1ed760;
+            transform: scale(1.02);
+        }
+
+        /* Lista de Canciones */
+        .track-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .track-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 16px;
+            border-radius: 4px;
+            background-color: rgba(255, 255, 255, 0.05);
+            transition: background-color 0.2s;
+            cursor: pointer;
+        }
+
+        .track-item:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .track-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .track-cover {
+            width: 40px;
+            height: 40px;
+            background-color: #282828;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Reproductor Inferior Fijo */
+        .player-bar {
+            height: 90px;
+            background-color: #000;
+            border-top: 1px solid #282828;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 16px;
+        }
+
+        .current-track {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            width: 30%;
+        }
+
+        .player-controls {
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
-            height: 100vh;
-            margin: 0;
+            gap: 8px;
+            width: 40%;
         }
-        .player-card {
-            background-color: #181818;
-            padding: 30px;
-            border-radius: 12px;
-            text-align: center;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
-            width: 90%;
-            max-width: 400px;
+
+        audio {
+            width: 100%;
+            height: 32px;
+            filter: invert(100%) hue-rotate(180deg); /* Adapta el reproductor nativo al modo oscuro */
         }
-        h1 { color: #1db954; margin-bottom: 10px; }
-        p { color: #b3b3b3; font-size: 14px; }
-        .status { margin-top: 20px; padding: 10px; background: #282828; border-radius: 6px; font-size: 13px; }
     </style>
 </head>
 <body>
-    <div class="player-card">
-        <h1>Musiquita 🎵</h1>
-        <p>Tu reproductor web independiente</p>
-        <div class="status" id="estado">Conectando con el servidor...</div>
+
+    <div class="app-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="logo">
+                <span>🎵</span> Musiquita
+            </div>
+            <ul class="nav-items">
+                <li class="nav-link active"><span>🏠</span> Inicio</li>
+                <li class="nav-link"><span>🔍</span> Buscar</li>
+            </ul>
+            <div class="playlists-section">
+                <div class="playlists-title">Tus Playlists</div>
+                <ul class="nav-items">
+                    <li class="nav-link">Favoritas</li>
+                    <li class="nav-link">Para Entrenar</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Contenido Principal -->
+        <div class="main-content">
+            <!-- Sección YouTube / Descargas -->
+            <div class="youtube-card">
+                <h2>Importar / Descargar desde YouTube</h2>
+                <p style="color: #b3b3b3; font-size: 0.85rem;">Pega un enlace de YouTube para añadir la canción a tu biblioteca.</p>
+                <div class="input-group">
+                    <input type="text" id="yt-url" placeholder="https://www.youtube.com/watch?v=...">
+                    <button class="btn-green" onclick="importarCancion()">Importar</button>
+                </div>
+            </div>
+
+            <!-- Lista de Canciones -->
+            <h2 class="section-header">Tu Biblioteca</h2>
+            <div class="track-list" id="track-list">
+                <div class="track-item" onclick="reproducir('Canción de Ejemplo', 'Artista Demo', '')">
+                    <div class="track-info">
+                        <div class="track-cover">🎵</div>
+                        <div>
+                            <div>Canción de Ejemplo</div>
+                            <div style="color: #b3b3b3; font-size: 0.8rem;">Artista Demo</div>
+                        </div>
+                    </div>
+                    <button class="btn-green" style="padding: 6px 12px; font-size: 0.8rem;">▶ Reproducir</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reproductor Estilo Spotify -->
+    <div class="player-bar">
+        <div class="current-track">
+            <div class="track-cover" id="player-cover">🎵</div>
+            <div>
+                <div id="player-title" style="font-weight: 600;">Ninguna canción seleccionada</div>
+                <div id="player-artist" style="color: #b3b3b3; font-size: 0.8rem;">---</div>
+            </div>
+        </div>
+
+        <div class="player-controls">
+            <audio id="audio-player" controls></audio>
+        </div>
+
+        <div style="width: 30%;"></div>
     </div>
 
     <script>
-        // Comprobación rápida de que el servidor responde
-        fetch('/api/test')
-            .then(res => res.json())
-            .then(data => {
-                document.getElementById('estado').innerText = "Estado: " + data.mensaje;
-                document.getElementById('estado').style.color = "#1db954";
-            })
-            .catch(() => {
-                document.getElementById('estado').innerText = "Error al conectar con el servidor backend";
-                document.getElementById('estado').style.color = "#ff4444";
-            });
+        function reproducir(titulo, artista, url) {
+            document.getElementById('player-title').innerText = titulo;
+            document.getElementById('player-artist').innerText = artista;
+            
+            const player = document.getElementById('audio-player');
+            if(url) {
+                player.src = url;
+                player.play();
+            }
+        }
+
+        function importarCancion() {
+            const url = document.getElementById('yt-url').value;
+            if(!url) return alert('Por favor, pega un enlace de YouTube.');
+            
+            alert('Enviando enlace al servidor para procesar: ' + url);
+            // Aquí se conectará la petición fetch('/api/download') con el backend
+        }
     </script>
 </body>
 </html>
