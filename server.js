@@ -7,54 +7,58 @@ const PORT = process.env.PORT || 3000;
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
 
-// Ruta de descarga optimizada mediante servicios de redirección y APIs públicas
+// Ruta optimizada utilizando la API pública de Cobalt para extraer el MP3 directo
 app.post('/api/download', async (req, res) => {
     const { url } = req.body;
     if (!url) return res.status(400).json({ error: 'Falta la URL de YouTube' });
 
     try {
-        // Extraer el ID del video de YouTube de forma limpia
-        const match = url.match(/(?:v=|\/)([0-9A-Za-z_-]{11})/);
-        const videoId = match ? match[1] : null;
+        console.log('Conectando con Cobalt API para extraer audio de:', url);
+        
+        const cobaltResponse = await fetch('https://api.cobalt.tools/api/json', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'User-Agent': 'Mozilla/5.0'
+            },
+            body: JSON.stringify({
+                url: url,
+                isAudioOnly: true,
+                audioFormat: 'mp3'
+            })
+        });
 
-        if (!videoId) {
-            return res.status(400).json({ error: 'El enlace de YouTube no es válido.' });
+        const data = await cobaltResponse.json();
+        console.log('Respuesta obtenida:', data);
+
+        if (!data || (!data.url && !data.picker)) {
+            return res.status(500).json({ error: 'El servicio externo no pudo procesar este enlace.' });
         }
 
-        console.log('Procesando ID de YouTube:', videoId);
-
-        // Usamos una API pública de streaming de audio altamente estable para evitar bloqueos de IP
-        // Esto actúa exactamente igual que las webs de conversión rápida
-        const audioStreamUrl = `https://piped.video/videoplayback?id=${videoId}&audio=1`;
-        const infoUrl = `https://piped-api.kavin.rocks/streams/${videoId}`;
-
-        // Intentamos obtener el título real del video de forma limpia
+        // Obtenemos el enlace de descarga directa del MP3
+        const directAudioUrl = data.url || (data.picker && data.picker[0] ? data.picker[0].url : null);
         let title = "Audio de YouTube";
-        let artist = "YouTube Music";
-
-        try {
-            const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
-            const response = await fetch(infoUrl);
-            const data = await response.json();
-            if (data && data.title) {
-                title = data.title;
-                artist = data.uploader || 'YouTube';
-            }
-        } catch (e) {
-            console.log('No se pudieron obtener los metadatos exactos, usando valores por defecto.');
+        
+        if (data.filename) {
+            title = data.filename.replace(/\.[^/.]+$/, ""); // Limpia la extensión del nombre
         }
 
-        // Devolvemos el enlace directo de audio listo para reproducir y escuchar sin cortes
+        if (!directAudioUrl) {
+            return res.status(500).json({ error: 'No se generó un enlace de audio válido.' });
+        }
+
+        // Devolvemos la URL directa lista para reproducir en el iPhone
         res.json({
             success: true,
             title: title,
-            artist: artist,
-            fileUrl: audioStreamUrl
+            artist: 'YouTube Music',
+            fileUrl: directAudioUrl
         });
 
     } catch (error) {
-        console.error('Error al procesar:', error);
-        res.status(500).json({ error: 'No se pudo procesar el enlace. Prueba con otro vídeo.' });
+        console.error('Error detallado:', error);
+        res.status(500).json({ error: 'Error de conexión al procesar el audio.' });
     }
 });
 
