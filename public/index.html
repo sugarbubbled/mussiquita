@@ -2,7 +2,6 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <!-- Metaetiquetas críticas para iPhone / Web App en PWA -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -22,7 +21,7 @@
             display: flex;
             flex-direction: column;
             height: 100vh;
-            height: 100dvh; /* Soporte perfecto para la pantalla dinámica del iPhone */
+            height: 100dvh;
             overflow: hidden;
             padding-top: env(safe-area-inset-top);
             padding-bottom: env(safe-area-inset-bottom);
@@ -35,7 +34,6 @@
             overflow: hidden;
         }
 
-        /* Cabecera estilo App móvil */
         .mobile-header {
             padding: 16px;
             font-size: 1.5rem;
@@ -47,7 +45,6 @@
             background-color: #000;
         }
 
-        /* Contenido Desplazable */
         .main-content {
             flex: 1;
             background: linear-gradient(to bottom, #202020, #121212);
@@ -58,7 +55,6 @@
             gap: 20px;
         }
 
-        /* Tarjeta de YouTube */
         .youtube-card {
             background-color: #181818;
             padding: 16px;
@@ -110,7 +106,6 @@
             transform: scale(0.98);
         }
 
-        /* Lista de Canciones */
         .track-list {
             display: flex;
             flex-direction: column;
@@ -130,6 +125,8 @@
             display: flex;
             align-items: center;
             gap: 12px;
+            overflow: hidden;
+            flex: 1;
         }
 
         .track-cover {
@@ -141,9 +138,9 @@
             align-items: center;
             justify-content: center;
             font-size: 1.2rem;
+            flex-shrink: 0;
         }
 
-        /* Reproductor Inferior flotante estilo Spotify Mobile */
         .player-bar {
             background-color: #181818;
             margin: 0 8px 8px 8px;
@@ -168,7 +165,6 @@
             margin-top: 8px;
         }
 
-        /* Navegación inferior tipo App */
         .bottom-nav {
             height: 60px;
             background-color: #000;
@@ -196,39 +192,25 @@
 <body>
 
     <div class="app-container">
-        <!-- Cabecera Móvil -->
         <div class="mobile-header">
             <span>🎵</span> Musiquita
         </div>
 
-        <!-- Contenido -->
         <div class="main-content">
-            <!-- Tarjeta de Importación YouTube -->
             <div class="youtube-card">
                 <h2>Descargar de YouTube</h2>
                 <div class="input-group">
                     <input type="text" id="yt-url" placeholder="Pega el enlace de YouTube aquí...">
-                    <button class="btn-green" onclick="importarCancion()">Importar a MP3</button>
+                    <button class="btn-green" id="btn- descargar" onclick="importarCancion()">Descargar MP3</button>
                 </div>
             </div>
 
-            <!-- Biblioteca -->
-            <h3 style="font-size: 1.2rem; margin-top: 10px;">Biblioteca</h3>
+            <h3 style="font-size: 1.2rem; margin-top: 10px;">Tu Biblioteca</h3>
             <div class="track-list" id="track-list">
-                <div class="track-item">
-                    <div class="track-info">
-                        <div class="track-cover">🎧</div>
-                        <div>
-                            <div style="font-weight: 600; font-size: 0.95rem;">Canción de Ejemplo</div>
-                            <div style="color: #b3b3b3; font-size: 0.8rem;">YouTube Downloader</div>
-                        </div>
-                    </div>
-                    <button class="btn-green" style="padding: 8px 14px; font-size: 0.8rem;" onclick="reproducir('Canción de Ejemplo', 'YouTube Downloader', '')">▶</button>
-                </div>
+                <!-- Las canciones descargadas aparecerán aquí dinámicamente -->
             </div>
         </div>
 
-        <!-- Reproductor Integrado -->
         <div class="player-bar">
             <div class="player-left">
                 <div class="track-cover" style="width: 40px; height: 40px;">🎵</div>
@@ -240,7 +222,6 @@
         </div>
         <audio id="audio-player" controls style="background: #181818;"></audio>
 
-        <!-- Barra de Navegación inferior tipo App nativa -->
         <div class="bottom-nav">
             <a class="nav-item active"><span>🏠</span>Inicio</a>
             <a class="nav-item"><span>🔍</span>Buscar</a>
@@ -250,10 +231,13 @@
 
     <script>
         async function importarCancion() {
-            const url = document.getElementById('yt-url').value;
+            const urlInput = document.getElementById('yt-url');
+            const url = urlInput.value;
             if(!url) return alert('Por favor, introduce un enlace válido.');
 
-            alert('Conectando con el servidor para descargar...');
+            const btn = document.querySelector('.btn-green');
+            btn.innerText = 'Descargando MP3... (espera)';
+            btn.disabled = true;
 
             try {
                 const response = await fetch('/api/download', {
@@ -262,14 +246,35 @@
                     body: JSON.stringify({ url })
                 });
                 const data = await response.json();
+                
                 if(data.success) {
-                    alert('¡Proceso iniciado con éxito!');
+                    alert('¡Canción descargada con éxito!');
+                    urlInput.value = '';
+                    
+                    // Añadir la canción dinámicamente a la lista visual
+                    const trackList = document.getElementById('track-list');
+                    const newItem = document.createElement('div');
+                    newItem.className = 'track-item';
+                    newItem.innerHTML = `
+                        <div class="track-info">
+                            <div class="track-cover">🎵</div>
+                            <div style="overflow: hidden;">
+                                <div style="font-weight: 600; font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${data.title}</div>
+                                <div style="color: #b3b3b3; font-size: 0.8rem;">${data.artist}</div>
+                            </div>
+                        </div>
+                        <button class="btn-green" style="padding: 8px 14px; font-size: 0.8rem;" onclick="reproducir('${data.title.replace(/'/g, "")}', '${data.artist.replace(/'/g, "")}', '${data.fileUrl}')">▶</button>
+                    `;
+                    trackList.prepend(newItem);
                 } else {
-                    alert('Hubo un problema al procesar el enlace.');
+                    alert('Error: ' + (data.error || 'No se pudo procesar'));
                 }
             } catch (e) {
                 console.error(e);
                 alert('Error de conexión con el servidor.');
+            } finally {
+                btn.innerText = 'Descargar MP3';
+                btn.disabled = false;
             }
         }
 
@@ -277,10 +282,8 @@
             document.getElementById('player-title').innerText = titulo;
             document.getElementById('player-artist').innerText = artista;
             const player = document.getElementById('audio-player');
-            if(url) {
-                player.src = url;
-                player.play();
-            }
+            player.src = url;
+            player.play();
         }
     </script>
 </body>
